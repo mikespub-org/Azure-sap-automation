@@ -84,6 +84,7 @@ variable "use_private_endpoint" {
 }
 
 variable "hana_dual_nics" {
+  description = "value to indicate if dual nics are used for HANA"
 }
 
 locals {
@@ -292,12 +293,6 @@ locals {
   #
   ##############################################################################################
 
-  enable_admin_subnet = (
-    var.application.dual_nics ||
-    var.databases[0].dual_nics ||
-    (local.isHANA && var.hana_dual_nics)
-  )
-
   admin_subnet_defined = length(try(var.infrastructure.vnets.sap.subnet_admin, {})) > 0
   admin_subnet_prefix = local.admin_subnet_defined ? (
     try(var.infrastructure.vnets.sap.subnet_admin.prefix, "")) : (
@@ -306,6 +301,18 @@ locals {
   admin_subnet_arm_id = local.admin_subnet_defined ? (
     try(var.infrastructure.vnets.sap.subnet_admin.arm_id, "")) : (
     var.landscape_tfstate.admin_subnet_id
+  )
+
+  enable_admin_subnet = (
+    (
+      var.application.dual_nics ||
+      var.databases[0].dual_nics ||
+      (local.isHANA && var.hana_dual_nics)
+    )
+    &&
+    (
+      (length(local.admin_subnet_prefix) + length(local.admin_subnet_arm_id)) > 0
+    )
   )
 
   admin_subnet_exists = length(local.admin_subnet_arm_id) > 0
@@ -343,7 +350,7 @@ locals {
 
   admin_subnet_nsg_name = local.admin_subnet_nsg_defined ? (
     local.admin_subnet_nsg_exists ? (
-      split("/", var.infrastructure.vnets.sap.subnet_admin.nsg.arm_id)[10]) : (
+      split("/", var.infrastructure.vnets.sap.subnet_admin.nsg.arm_id)[8]) : (
       length(var.infrastructure.vnets.sap.subnet_admin.nsg.name) > 0 ? (
         var.infrastructure.vnets.sap.subnet_admin.nsg.name) : (
         format("%s%s%s%s",
@@ -410,7 +417,7 @@ locals {
   database_subnet_nsg_exists = length(local.database_subnet_nsg_arm_id) > 0
   database_subnet_nsg_name = local.database_subnet_nsg_defined ? (
     local.database_subnet_nsg_exists ? (
-      split("/", var.infrastructure.vnets.sap.subnet_db.nsg.arm_id)[10]) : (
+      split("/", var.infrastructure.vnets.sap.subnet_db.nsg.arm_id)[8]) : (
       length(var.infrastructure.vnets.sap.subnet_db.nsg.name) > 0 ? (
         var.infrastructure.vnets.sap.subnet_db.nsg.name) : (
         format("%s%s%s%s",
@@ -514,6 +521,7 @@ locals {
     var.key_vault.kv_user_id) : (
     var.landscape_tfstate.landscape_key_vault_user_arm_id
   )
+
   prvt_key_vault_id = length(try(var.key_vault.kv_prvt_id, "")) > 0 ? (
     var.key_vault.kv_prvt_id) : (
     var.landscape_tfstate.landscape_key_vault_private_arm_id

@@ -33,11 +33,14 @@ resource "azurerm_storage_account" "shared" {
     data.azurerm_resource_group.resource_group[0].name) : (
     azurerm_resource_group.resource_group[0].name
   )
-  location                  = var.infrastructure.region
-  account_tier              = "Premium"
-  account_replication_type  = "ZRS"
-  account_kind              = "FileStorage"
-  enable_https_traffic_only = false
+  location                        = var.infrastructure.region
+  account_tier                    = "Premium"
+  account_replication_type        = "ZRS"
+  account_kind                    = "FileStorage"
+  enable_https_traffic_only       = false
+  min_tls_version                 = "TLS1_2"
+  allow_nested_items_to_be_public = false
+
 
 }
 
@@ -50,7 +53,7 @@ resource "azurerm_storage_account_network_rules" "shared" {
   storage_account_id = azurerm_storage_account.shared[0].id
 
   default_action = "Deny"
-  ip_rules       = length(var.Agent_IP) > 0 ? [var.Agent_IP] : null
+  ip_rules       = length(var.Agent_IP) > 0 ? [var.Agent_IP] : [""]
   virtual_network_subnet_ids = compact(
     [
       try(var.landscape_tfstate.admin_subnet_id, ""),
@@ -62,7 +65,6 @@ resource "azurerm_storage_account_network_rules" "shared" {
   bypass = ["AzureServices", "Logging", "Metrics"]
 
 }
-
 
 resource "azurerm_storage_share" "install" {
   count = var.NFS_provider == "AFS" ? (
@@ -77,7 +79,7 @@ resource "azurerm_storage_share" "install" {
   storage_account_name = var.NFS_provider == "AFS" ? azurerm_storage_account.shared[0].name : ""
   enabled_protocol     = "NFS"
 
-  quota = 128
+  quota = 256
 }
 
 resource "azurerm_storage_account_network_rules" "install" {
