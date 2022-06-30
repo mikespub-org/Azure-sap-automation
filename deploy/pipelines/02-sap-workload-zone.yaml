@@ -67,7 +67,7 @@ stages:
                   echo "##vso[task.logissue type=error]Variable ARM_CLIENT_ID was not defined."
                   exit 2
                 fi
-                if [ ! -n $(ARM_CLIENT_SECRET) ]; then
+                if [ ! -n $ARM_CLIENT_SECRET ]; then
                   echo "##vso[task.logissue type=error]Variable ARM_CLIENT_SECRET was not defined."
                   exit 2
                 fi
@@ -113,7 +113,7 @@ stages:
                 export DEPLOYMENT_REPO_PATH=$(Build.Repository.LocalPath)
 
               echo -e "$green--- az login ---$reset"
-                az login --service-principal --username $(ARM_CLIENT_ID) --password $(ARM_CLIENT_SECRET) --tenant $(ARM_TENANT_ID)
+                az login --service-principal --username $(ARM_CLIENT_ID) --password $ARM_CLIENT_SECRET --tenant $(ARM_TENANT_ID)
                 return_code=$?
                 if [ 0 != $return_code ]; then
                   echo -e "$boldred--- Login failed ---$reset"
@@ -166,14 +166,28 @@ stages:
                 cd $HOME/LANDSCAPE/$(workload_zone_folder)
                 $DEPLOYMENT_REPO_PATH/deploy/scripts/install_workloadzone.sh --parameterfile $(workload_zone_configuration_file)      \
                   --deployer_environment $(deployer_environment) --subscription $(ARM_SUBSCRIPTION_ID)                                \
-                  --spn_id $(ARM_CLIENT_ID) --spn_secret $(ARM_CLIENT_SECRET) --tenant_id $(ARM_TENANT_ID)                            \
+                  --spn_id $(ARM_CLIENT_ID) --spn_secret $ARM_CLIENT_SECRET --tenant_id $(ARM_TENANT_ID)                            \
                   --deployer_tfstate_key "${deployer_tfstate_key}" --keyvault "${keyvault}" --storageaccountname "${REMOTE_STATE_SA}" \
                   --state_subscription "${STATE_SUBSCRIPTION}" --auto-approve --ado
                 return_code=$?
 
                 if [ -f ${workload_environment_file_name} ]; then
                   export     workloadkeyvault=$(cat ${workload_environment_file_name}  | grep workloadkeyvault     | awk -F'=' '{print $2}' | xargs) ; echo 'Workload Key Vault' ${workloadkeyvault}
+                  export       workloadprefix=$(cat ${workload_environment_file_name}  | grep workload_zone_prefix | awk -F'=' '{print $2}' | xargs) ; echo 'Workload Prefix'    ${workloadprefix}
                 fi
+
+                if [ -z $(FENCING_SPN_ID) ]; then
+                  echo "##vso[task.logissue type=warning]Variable FENCING_SPN_ID is not set. Required for highly available deployments"
+                else
+
+                  export fencing_id=$(az keyvault secret list --vault-name $workloadkeyvault --query [].name -o tsv | grep ${workloadprefix}-fencing-spn-id | xargs)
+                  if [ -z "$fencing_id" ]; then
+                    az keyvault secret set --output none --name ${workloadprefix}-fencing-spn-id --vault-name $workloadkeyvault --value $(FENCING_SPN_ID)
+                    az keyvault secret set --output none --name ${workloadprefix}-fencing-spn-pwd --vault-name $workloadkeyvault --value $(FENCING_SPN_PWD)
+                    az keyvault secret set --output none --name ${workloadprefix}-fencing-spn-tenant --vault-name $workloadkeyvault --value $(FENCING_SPN_TENANT)
+                  fi
+                fi
+
 
                 az account set --subscription "${STATE_SUBSCRIPTION}"
                 if [[ 1 -eq $ip_added ]]; then
