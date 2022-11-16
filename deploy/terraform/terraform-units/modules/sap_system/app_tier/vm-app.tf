@@ -43,6 +43,9 @@ resource "azurerm_network_interface" "app" {
 
     }
   }
+  lifecycle {
+    ignore_changes = [tags]
+  }
 }
 
 resource "azurerm_network_interface_application_security_group_association" "app" {
@@ -65,7 +68,7 @@ resource "azurerm_network_interface_application_security_group_association" "app
 
 resource "azurerm_network_interface" "app_admin" {
   provider = azurerm.main
-  count = local.enable_deployment && var.application.dual_nics ? (
+  count = local.enable_deployment && var.application.dual_nics && length(try(var.admin_subnet.id, "")) > 0 ? (
     local.application_server_count) : (
     0
   )
@@ -210,6 +213,15 @@ resource "azurerm_linux_virtual_machine" "app" {
     }
   }
 
+  dynamic "plan" {
+    for_each = range(local.app_custom_image ? 1 : 0)
+    content {
+      name      = local.app_os.offer
+      publisher = local.app_os.publisher
+      product   = local.app_os.sku
+    }
+  }
+
   boot_diagnostics {
     storage_account_uri = var.storage_bootdiag_endpoint
   }
@@ -218,6 +230,9 @@ resource "azurerm_linux_virtual_machine" "app" {
 
   tags = try(var.application.app_tags, {})
 
+  lifecycle {
+    ignore_changes = [tags]
+  }
 }
 
 # Create the Windows Application VM(s)
@@ -253,7 +268,7 @@ resource "azurerm_windows_virtual_machine" "app" {
     null
   )
   //If length of zones > 1 distribute servers evenly across zones
-  zone = local.use_app_avset ? null : local.app_zones[count.index % max(local.app_zone_count, 1)]
+  zone = local.use_app_avset ? null : try(local.app_zones[count.index % max(local.app_zone_count, 1)], null)
 
   network_interface_ids = var.application.dual_nics ? (
     var.options.legacy_nic_order ? (
@@ -278,7 +293,7 @@ resource "azurerm_windows_virtual_machine" "app" {
             name      = storage_type.name,
             id        = disk_count,
             disk_type = storage_type.disk_type,
-            size_gb   = storage_type.size_gb,
+            size_gb   = storage_type.size_gb < 128 ? 128 : storage_type.size_gb,
             caching   = storage_type.caching
           }
         ]
@@ -306,6 +321,14 @@ resource "azurerm_windows_virtual_machine" "app" {
       version   = local.app_os.version
     }
   }
+  dynamic "plan" {
+    for_each = range(local.app_custom_image ? 1 : 0)
+    content {
+      name      = local.app_os.offer
+      publisher = local.app_os.publisher
+      product   = local.app_os.sku
+    }
+  }
 
   boot_diagnostics {
     storage_account_uri = var.storage_bootdiag_endpoint
@@ -316,6 +339,9 @@ resource "azurerm_windows_virtual_machine" "app" {
 
   tags = try(var.application.app_tags, {})
 
+  lifecycle {
+    ignore_changes = [tags]
+  }
 }
 
 # Creates managed data disk
@@ -342,8 +368,9 @@ resource "azurerm_managed_disk" "app" {
       azurerm_windows_virtual_machine.app[local.app_data_disks[count.index].vm_index].zone
     )
   )
-
-
+  lifecycle {
+    ignore_changes = [tags]
+  }
 }
 
 resource "azurerm_virtual_machine_data_disk_attachment" "app" {
@@ -360,7 +387,7 @@ resource "azurerm_virtual_machine_data_disk_attachment" "app" {
 }
 
 
-# VM Extension 
+# VM Extension
 resource "azurerm_virtual_machine_extension" "app_lnx_aem_extension" {
   provider = azurerm.main
   count = local.enable_deployment && upper(local.app_ostype) == "LINUX" ? (
@@ -377,6 +404,10 @@ resource "azurerm_virtual_machine_extension" "app_lnx_aem_extension" {
     "system": "SAP"
   }
 SETTINGS
+
+  lifecycle {
+    ignore_changes = [tags]
+  }
 }
 
 
@@ -396,4 +427,25 @@ resource "azurerm_virtual_machine_extension" "app_win_aem_extension" {
     "system": "SAP"
   }
 SETTINGS
+}
+
+resource "azurerm_virtual_machine_extension" "configure_ansible_app" {
+
+  provider = azurerm.main
+  count = local.enable_deployment && upper(local.app_ostype) == "WINDOWS" ? (
+    local.application_server_count) : (
+    0
+  )
+
+  name                 = "configure_ansible"
+  virtual_machine_id   = azurerm_windows_virtual_machine.app[count.index].id
+  publisher            = "Microsoft.Compute"
+  type                 = "CustomScriptExtension"
+  type_handler_version = "1.9"
+  settings             = <<SETTINGS
+        {
+          "fileUris": ["https://raw.githubusercontent.com/ansible/ansible/devel/examples/scripts/ConfigureRemotingForAnsible.ps1"],
+          "commandToExecute": "powershell.exe -ExecutionPolicy Unrestricted -File ConfigureRemotingForAnsible.ps1 -Verbose"
+        }
+    SETTINGS
 }

@@ -53,7 +53,10 @@ data "azurerm_virtual_network" "vnet_sap" {
 # // Peers management VNET to SAP VNET
 resource "azurerm_virtual_network_peering" "peering_management_sap" {
   provider = azurerm.deployer
-  count    = local.vnet_sap_exists || !var.use_deployer ? 0 : 1
+  count = var.peer_with_control_plane_vnet ? (
+    local.vnet_sap_exists || !var.use_deployer ? 0 : 1) : (
+    0
+  )
   name = substr(
     format("%s_to_%s",
       split("/", local.vnet_mgmt_id)[8],
@@ -78,7 +81,10 @@ resource "azurerm_virtual_network_peering" "peering_management_sap" {
 // Peers SAP VNET to management VNET
 resource "azurerm_virtual_network_peering" "peering_sap_management" {
   provider = azurerm.main
-  count    = local.vnet_sap_exists || !var.use_deployer ? 0 : 1
+  count = var.peer_with_control_plane_vnet ? (
+    local.vnet_sap_exists || !var.use_deployer ? 0 : 1) : (
+    0
+  )
   name = substr(
     format("%s_to_%s",
       local.vnet_sap_exists ? (
@@ -147,7 +153,7 @@ resource "azurerm_route" "admin" {
 
 resource "azurerm_private_dns_zone_virtual_network_link" "vnet_sap" {
   provider = azurerm.deployer
-  count    = length(var.dns_label) > 0 ? 1 : 0
+  count    = length(var.dns_label) > 0 && !var.use_custom_dns_a_registration ? 1 : 0
   name = format("%s%s%s%s",
     var.naming.resource_prefixes.dns_link,
     local.prefix,

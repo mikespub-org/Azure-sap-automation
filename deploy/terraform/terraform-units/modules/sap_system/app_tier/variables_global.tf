@@ -79,12 +79,16 @@ variable "cloudinit_growpart_config" {
 variable "license_type" {
   description = "Specifies the license type for the OS"
   default     = ""
-
 }
 
 variable "use_loadbalancers_for_standalone_deployments" {
   description = "Defines if load balancers are used even for standalone deployments"
   default     = true
+}
+
+variable "idle_timeout_scs_ers" {
+  description = "Sets the idle timeout setting for the SCS and ERS loadbalancer"
+  default     = 4
 }
 
 variable "network_location" {
@@ -109,4 +113,30 @@ variable "use_secondary_ips" {
 
 variable "deploy_application_security_groups" {
   description = "Defines if application security groups should be deployed"
+}
+
+variable "use_msi_for_clusters" {
+  description = "If true, the Pacemaker cluser will use a managed identity"
+}
+
+variable "fencing_role_name" {
+  description = "If specified the role name to use for the fencing"
+}
+
+variable "use_custom_dns_a_registration" {
+  description = "Boolean value indicating if a custom dns a record should be created when using private endpoints"
+  default     = false
+  type        = bool
+}
+
+variable "management_dns_subscription_id" {
+  description = "String value giving the possibility to register custom dns a records in a separate subscription"
+  default     = null
+  type        = string
+}
+
+variable "management_dns_resourcegroup_name" {
+  description = "String value giving the possibility to register custom dns a records in a separate resourcegroup"
+  default     = null
+  type        = string
 }

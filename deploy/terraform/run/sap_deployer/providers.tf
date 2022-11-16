@@ -9,13 +9,27 @@ Description:
     <    less than version number
     <=   less than or equal to version number
     ~>   pessimistic constraint operator, constraining both the oldest and newest version allowed.
-           For example, ~> 0.9   is equivalent to >= 0.9,   < 1.0 
+           For example, ~> 0.9   is equivalent to >= 0.9,   < 1.0
                         ~> 0.8.4 is equivalent to >= 0.8.4, < 0.9
 */
 
 provider "azurerm" {
-  features {}
+  features {
+    key_vault {
+      purge_soft_delete_on_destroy               = !var.enable_purge_control_for_keyvaults
+      purge_soft_deleted_keys_on_destroy         = !var.enable_purge_control_for_keyvaults
+      purge_soft_deleted_secrets_on_destroy      = !var.enable_purge_control_for_keyvaults
+      purge_soft_deleted_certificates_on_destroy = !var.enable_purge_control_for_keyvaults
+    }
+  }
   partner_id = "f94f50f2-2539-42f8-9c8e-c65b28c681f7"
+}
+
+provider "azurerm" {
+  features {}
+  alias                      = "dnsmanagement"
+  subscription_id            = try(var.management_dns_subscription_id, null)
+  skip_provider_registration = true
 }
 
 terraform {
@@ -38,7 +52,7 @@ terraform {
     }
     azurerm = {
       source  = "hashicorp/azurerm"
-      version = "~> 3.0"
+      version = "~> 3.2"
     }
   }
 }
