@@ -1,6 +1,7 @@
 exclude_paths:
   - deploy/pipelines
   - deploy/ansible/BOM-catalog
+  - deploy/ansible/filter_plugins
   - deploy/terraform
   - .github
 
@@ -9,14 +10,9 @@ warn_list:
   - experimental
 
 skip_list:
-  # Ignored because there is no easier way to do
-  - no-handler
-
-  # Refactor needed
-  - key-order[task]
-
-  # Following are ignored because of readability:
-  - name[casing]
+  - no-handler   # Ignored because there is no easier way to do
+  - key-order[task] # Refactor needed
+  - name[casing] # Following are ignored because of readability:
   - no-changed-when
   - role-name
   - var-naming
@@ -24,7 +20,6 @@ skip_list:
   - yaml[colons]
   - yaml[commas]
   - yaml[line-length]
+  - yaml[octal-values]
   - name[template]
-
-  # csh is not supported in command
-  - command-instead-of-shell
+  - command-instead-of-shell # csh is not supported in commands

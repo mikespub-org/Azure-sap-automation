@@ -166,6 +166,15 @@
         state:                         directory
         mode:                          0755
 
+    - name:                            "PAS Install: debug"
+      ansible.builtin.command:         "cat {{ dir_params }}/{{ sap_inifile }}"
+      register:                        debug_inifile
+
+    - name:                            "PAS Install: progress"
+      ansible.builtin.debug:
+        var:                           debug_inifile
+        verbosity:                     4
+
     - name:                            "PAS Install: progress"
       ansible.builtin.debug:
         msg:                           "Starting PAS installation ({{ sid_to_be_deployed.sid | upper }})"
@@ -251,7 +260,7 @@
       become:                          true
       become_user:                     "{{ sid_to_be_deployed.sid | lower }}adm"
       ansible.builtin.shell: |
-                                       {{ hdbuserstore_path }} SET DEFAULT {{ db_lb_virtual_host }}:30313@{{ db_sid | upper }} {{ hana_schema }} {{ main_password }}
+                                       {{ hdbuserstore_path }} SET DEFAULT {{ db_lb_virtual_host }}:3{{ db_instance_number }}13@{{ db_sid | upper }} {{ hana_schema }} {{ main_password }}
       environment:
         SAPSYSTEMNAME:                 "{{ sid_to_be_deployed.sid | upper }}"
         TMPDIR:                        "{{ hdbuserstore_path }}"

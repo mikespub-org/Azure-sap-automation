@@ -126,7 +126,7 @@ function get_and_store_sa_details {
 
     save_config_vars "${config_file_name}" REMOTE_STATE_SA
     if [ -z $STATE_SUBSCRIPTION ];then
-        tfstate_resource_id=$(az resource list --name "${REMOTE_STATE_SA}" --resource-type Microsoft.Storage/storageAccountsN --query "[].id | [0]" --output tsv)
+        tfstate_resource_id=$(az resource list --name "${REMOTE_STATE_SA}" --resource-type Microsoft.Storage/storageAccounts --query "[].id | [0]" --output tsv)
     else
         tfstate_resource_id=$(az resource list --name "${REMOTE_STATE_SA}" --resource-type Microsoft.Storage/storageAccounts --subscription $STATE_SUBSCRIPTION --query "[].id | [0]" --output tsv)
     fi
@@ -312,6 +312,7 @@ function set_executing_user_environment_variables() {
         # print ARM environment variables
         echo -e "\t[set_executing_user_environment_variables]: ARM environment variables:"
         echo -e "\t\tARM_CLIENT_ID: $(printenv ARM_CLIENT_ID)"
+        echo -e "\t\tARM_SUBSCRIPTION_ID: $(printenv ARM_SUBSCRIPTION_ID)"
         echo -e "\t\tARM_USE_MSI: $(printenv ARM_USE_MSI)"
 
     else
@@ -380,6 +381,7 @@ function set_executing_user_environment_variables() {
         # print ARM environment variables
         echo -e "\t[set_executing_user_environment_variables]: ARM environment variables:"
         echo -e "\t\tARM_CLIENT_ID: $(printenv ARM_CLIENT_ID)"
+        echo -e "\t\tARM_SUBSCRIPTION_ID: $(printenv ARM_SUBSCRIPTION_ID)"
         echo -e "\t\tARM_USE_MSI: $(printenv ARM_USE_MSI)"
     fi
 }

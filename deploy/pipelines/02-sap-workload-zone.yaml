@@ -122,8 +122,10 @@ stages:
                 if [ ! -f /etc/profile.d/deploy_server.sh ]; then
                   echo -e "$green --- Install dos2unix ---$reset"
                   sudo apt-get -qq install dos2unix
+                  export AZURE_DEVOPS_EXT_PAT=$PAT
                 else
                   source /etc/profile.d/deploy_server.sh
+                  export AZURE_DEVOPS_EXT_PAT=$PAT
                 fi
 
                 if [ ! -f $CONFIG_REPO_PATH/LANDSCAPE/$(workload_zone_folder)/$(workload_zone_configuration_file) ]; then
@@ -270,6 +272,8 @@ stages:
               echo -e "$green--- Configure devops CLI extension ---$reset"
                 az config set extension.use_dynamic_install=yes_without_prompt --output none
 
+                az extension add --name azure-devops --output none
+
                 az devops configure --defaults organization=$(System.CollectionUri) project='$(System.TeamProject)' --output none
 
                 export PARENT_VARIABLE_GROUP_ID=$(az pipelines variable-group list --query "[?name=='$(parent_variable_group)'].id | [0]")
@@ -370,6 +374,12 @@ stages:
                 unzip -qq terraform_$(tf_version)_linux_amd64.zip ; sudo mv terraform /bin/
                 rm -f terraform_$(tf_version)_linux_amd64.zip
 
+                export ARM_CLIENT_ID=$WL_ARM_CLIENT_ID
+                export ARM_CLIENT_SECRET=$WL_ARM_CLIENT_SECRET
+                export ARM_TENANT_ID=$WL_ARM_TENANT_ID
+                export ARM_SUBSCRIPTION_ID=$WL_ARM_SUBSCRIPTION_ID
+                export ARM_USE_MSI=false
+
                 echo -e "$green--- az login ---$reset"
                   az login --service-principal --username $CP_ARM_CLIENT_ID --password=$CP_ARM_CLIENT_SECRET --tenant $CP_ARM_TENANT_ID --output none
                   return_code=$?
@@ -381,7 +391,13 @@ stages:
 
               else
                 echo -e "$green--- az login ---$reset"
-                  az login --identity --allow-no-subscriptions --output none
+
+                  if [ $LOGON_USING_SPN == "true" ]; then
+                    echo "Using SPN"
+                    az login --service-principal --username $CP_ARM_CLIENT_ID --password=$CP_ARM_CLIENT_SECRET --tenant $CP_ARM_TENANT_ID --output none
+                  else
+                    az login --identity --allow-no-subscriptions --output none
+                  fi
 
                   return_code=$?
                   if [ 0 != $return_code ]; then
@@ -458,8 +474,39 @@ stages:
                 cd $CONFIG_REPO_PATH/LANDSCAPE/$(workload_zone_folder)
                 if [ -f /etc/profile.d/deploy_server.sh ]; then
                   az logout --output none
-                  az login --identity --output none
-                  export ARM_USE_MSI=true
+                  if [ $LOGON_USING_SPN == "true" ]; then
+                    echo "Logon Using SPN"
+
+                    export ARM_CLIENT_ID=$WL_ARM_CLIENT_ID
+                    export ARM_CLIENT_SECRET=$WL_ARM_CLIENT_SECRET
+                    export ARM_TENANT_ID=$WL_ARM_TENANT_ID
+                    export ARM_SUBSCRIPTION_ID=$WL_ARM_SUBSCRIPTION_ID
+                    export ARM_USE_MSI=false
+                    az login --service-principal --username $WL_ARM_CLIENT_ID --password=$WL_ARM_CLIENT_SECRET --tenant $WL_ARM_TENANT_ID --output none
+                    return_code=$?
+                    if [ 0 != $return_code ]; then
+                      echo -e "$boldred--- Login failed ---$reset"
+                      echo "##vso[task.logissue type=error]az login failed."
+                      exit $return_code
+                    fi
+                  else
+                    export ARM_USE_MSI=true
+                    az login --identity --allow-no-subscriptions --output none
+                  fi
+                else
+                  export ARM_CLIENT_ID=$WL_ARM_CLIENT_ID
+                  export ARM_CLIENT_SECRET=$WL_ARM_CLIENT_SECRET
+                  export ARM_TENANT_ID=$WL_ARM_TENANT_ID
+                  export ARM_SUBSCRIPTION_ID=$WL_ARM_SUBSCRIPTION_ID
+                  export ARM_USE_MSI=false
+                  az login --service-principal --username $WL_ARM_CLIENT_ID --password=$WL_ARM_CLIENT_SECRET --tenant $WL_ARM_TENANT_ID --output none
+                  return_code=$?
+                  if [ 0 != $return_code ]; then
+                    echo -e "$boldred--- Login failed ---$reset"
+                    echo "##vso[task.logissue type=error]az login failed."
+                    exit $return_code
+                  fi
+
                 fi
 
                 $SAP_AUTOMATION_REPO_PATH/deploy/scripts/install_workloadzone.sh --parameterfile $(workload_zone_configuration_file)       \
@@ -607,9 +654,10 @@ stages:
               FENCING_SPN_PWD:         $(FENCING_SPN_PWD)
               SAPBITS:                 $(INSTALLATION_MEDIA_ACCOUNT)
               TEST_ONLY:               ${{ parameters.test }}
-              AZURE_DEVOPS_EXT_PAT:    $(PAT)
+              PAT:                     $(WZ_PAT)
               TF_LOG:                  $(TF_LOG)
               TF_IN_AUTOMATION:        true
               SAP_AUTOMATION_REPO_PATH: ${{ parameters.sap_automation_repo_path }}
               CONFIG_REPO_PATH:        ${{ parameters.config_repo_path }}/$(Deployment_Configuration_Path)
+              LOGON_USING_SPN:         $(Logon_Using_SPN)
             failOnStderr: false

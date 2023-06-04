@@ -99,6 +99,7 @@ stages:
                   rm -f terraform_$(tf_version)_linux_amd64.zip
               else
                 source /etc/profile.d/deploy_server.sh
+                export AZURE_DEVOPS_EXT_PAT=$PAT
 
               fi
 
@@ -215,6 +216,8 @@ stages:
 
                 az config set extension.use_dynamic_install=yes_without_prompt --output none
 
+                az extension add --name azure-devops --output none
+
                 az devops configure --defaults organization=$(System.CollectionUri) project='$(System.TeamProject)' --output none
 
                 export VARIABLE_GROUP_ID=$(az pipelines variable-group list --query "[?name=='$(variable_group)'].id | [0]")
@@ -225,29 +228,42 @@ stages:
                 fi
 
               # Check if running on deployer
-              if [[ ! -f /etc/profile.d/deploy_server.sh ]]; then
+                if [ -f /etc/profile.d/deploy_server.sh ]; then
+                  az logout --output none
+                  if [ $LOGON_USING_SPN == "true" ]; then
+                    echo "Using SPN"
 
-                az login --service-principal --username $(WL_ARM_CLIENT_ID) --password=$WL_ARM_CLIENT_SECRET --tenant $(WL_ARM_TENANT_ID)  --output none
-                return_code=$?
-                if [ 0 != $return_code ]; then
-                  echo -e "$boldred--- Login failed ---$reset"
-                  echo "##vso[task.logissue type=error]az login failed."
-                  exit $return_code
-                fi
-              else
-                echo -e "$green --- Running on deployer ---$reset"
-
-                tfstate_resource_id=$(az resource list --name "${REMOTE_STATE_SA}" --subscription ${STATE_SUBSCRIPTION} --resource-type Microsoft.Storage/storageAccounts --query "[].id | [0]" -o tsv)
-                if [ -z $tfstate_resource_id ]; then
-                  az login --service-principal --username $(ARM_CLIENT_ID) --password=$ARM_CLIENT_SECRET --tenant $(ARM_TENANT_ID)  --output none
+                    export ARM_CLIENT_ID=$WL_ARM_CLIENT_ID
+                    export ARM_CLIENT_SECRET=$WL_ARM_CLIENT_SECRET
+                    export ARM_TENANT_ID=$WL_ARM_TENANT_ID
+                    export ARM_SUBSCRIPTION_ID=$WL_ARM_SUBSCRIPTION_ID
+                    export ARM_USE_MSI=false
+                    az login --service-principal --username $WL_ARM_CLIENT_ID --password=$WL_ARM_CLIENT_SECRET --tenant $WL_ARM_TENANT_ID --output none
+                    return_code=$?
+                    if [ 0 != $return_code ]; then
+                      echo -e "$boldred--- Login failed ---$reset"
+                      echo "##vso[task.logissue type=error]az login failed."
+                      exit $return_code
+                    fi
+                  else
+                    export ARM_USE_MSI=true
+                    az login --identity --allow-no-subscriptions --output none
+                  fi
+                else
+                  export ARM_CLIENT_ID=$WL_ARM_CLIENT_ID
+                  export ARM_CLIENT_SECRET=$WL_ARM_CLIENT_SECRET
+                  export ARM_TENANT_ID=$WL_ARM_TENANT_ID
+                  export ARM_SUBSCRIPTION_ID=$WL_ARM_SUBSCRIPTION_ID
+                  export ARM_USE_MSI=false
+                  az login --service-principal --username $WL_ARM_CLIENT_ID --password=$WL_ARM_CLIENT_SECRET --tenant $WL_ARM_TENANT_ID --output none
                   return_code=$?
                   if [ 0 != $return_code ]; then
                     echo -e "$boldred--- Login failed ---$reset"
                     echo "##vso[task.logissue type=error]az login failed."
                     exit $return_code
                   fi
+
                 fi
-              fi
 
               echo -e "$green--- Define variables ---$reset"
                 cd $HOME_CONFIG/SYSTEM/$(sap_system_folder)
@@ -387,16 +403,17 @@ stages:
 
             displayName:               Deploy_SAP_infrastructure
             env:
-              WL_ARM_SUBSCRIPTION_ID:      $(ARM_SUBSCRIPTION_ID)
-              WL_ARM_CLIENT_ID:            $(ARM_CLIENT_ID)
-              WL_ARM_CLIENT_SECRET:        $(ARM_CLIENT_SECRET)
-              WL_ARM_TENANT_ID:            $(ARM_TENANT_ID)
+              WL_ARM_SUBSCRIPTION_ID:   $(ARM_SUBSCRIPTION_ID)
+              WL_ARM_CLIENT_ID:         $(ARM_CLIENT_ID)
+              WL_ARM_CLIENT_SECRET:     $(ARM_CLIENT_SECRET)
+              WL_ARM_TENANT_ID:         $(ARM_TENANT_ID)
               SYSTEM_ACCESSTOKEN:       $(System.AccessToken)
               SAP_AUTOMATION_REPO_PATH: ${{ parameters.sap_automation_repo_path }}
               CONFIG_REPO_PATH:         ${{ parameters.config_repo_path }}
-              AZURE_DEVOPS_EXT_PAT:     $(WZ_PAT)
+              PAT:                      $(WZ_PAT)
               TEST_ONLY:                ${{ parameters.test }}
               TF_LOG:                   $(TF_LOG)
               TF_IN_AUTOMATION:         true
+              LOGON_USING_SPN:          $(Logon_Using_SPN)
 
             failOnStderr:               false
