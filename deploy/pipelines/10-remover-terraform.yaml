@@ -213,8 +213,8 @@ stages:
                   "FRSO") LOCATION_IN_FILENAME="francesouth" ;;
                   "GENO") LOCATION_IN_FILENAME="germanynorth" ;;
                   "GEWC") LOCATION_IN_FILENAME="germanywest" ;;
-                  "JAEA") LOCATION_IN_FILENAME="japaneastst" ;;
-                  "JAWE") LOCATION_IN_FILENAME="japanwestst" ;;
+                  "JAEA") LOCATION_IN_FILENAME="japaneast" ;;
+                  "JAWE") LOCATION_IN_FILENAME="japanwest" ;;
                   "JINC") LOCATION_IN_FILENAME="jioindiacentral" ;;
                   "JINW") LOCATION_IN_FILENAME="jioindiawest" ;;
                   "GENO") LOCATION_IN_FILENAME="germanynorth" ;;
@@ -387,7 +387,7 @@ stages:
               WL_ARM_CLIENT_ID:         $(ARM_CLIENT_ID)
               WL_ARM_CLIENT_SECRET:     $(ARM_CLIENT_SECRET)
               WL_ARM_TENANT_ID:         $(ARM_TENANT_ID)
-              AZURE_DEVOPS_EXT_PAT:     $(PAT)
+              AZURE_DEVOPS_EXT_PAT:     $(WZ_PAT)
               SAP_AUTOMATION_REPO_PATH: ${{ parameters.sap_automation_repo_path }}
               CONFIG_REPO_PATH:         ${{ parameters.config_repo_path }}/$(Deployment_Configuration_Path)
 
@@ -520,8 +520,8 @@ stages:
                   "FRSO") LOCATION_IN_FILENAME="francesouth" ;;
                   "GENO") LOCATION_IN_FILENAME="germanynorth" ;;
                   "GEWC") LOCATION_IN_FILENAME="germanywest" ;;
-                  "JAEA") LOCATION_IN_FILENAME="japaneastst" ;;
-                  "JAWE") LOCATION_IN_FILENAME="japanwestst" ;;
+                  "JAEA") LOCATION_IN_FILENAME="japaneast" ;;
+                  "JAWE") LOCATION_IN_FILENAME="japanwest" ;;
                   "JINC") LOCATION_IN_FILENAME="jioindiacentral" ;;
                   "JINW") LOCATION_IN_FILENAME="jioindiawest" ;;
                   "GENO") LOCATION_IN_FILENAME="germanynorth" ;;
@@ -706,7 +706,7 @@ stages:
               WL_ARM_CLIENT_ID:         $(ARM_CLIENT_ID)
               WL_ARM_CLIENT_SECRET:     $(ARM_CLIENT_SECRET)
               WL_ARM_TENANT_ID:         $(ARM_TENANT_ID)
-              AZURE_DEVOPS_EXT_PAT:     $(PAT)
+              AZURE_DEVOPS_EXT_PAT:     $(WZ_PAT)
               SAP_AUTOMATION_REPO_PATH: ${{ parameters.sap_automation_repo_path }}
               CONFIG_REPO_PATH:         ${{ parameters.config_repo_path }}/$(Deployment_Configuration_Path)
 

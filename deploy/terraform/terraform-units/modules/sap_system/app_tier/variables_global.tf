@@ -123,6 +123,19 @@ variable "fencing_role_name" {
   description = "If specified the role name to use for the fencing"
 }
 
+
+variable "register_virtual_network_to_dns" {
+  description = "Boolean value indicating if the vnet should be registered to the dns zone"
+  type        = bool
+}
+
+#########################################################################################
+#                                                                                       #
+#  DNS settings                                                                         #
+#                                                                                       #
+#########################################################################################
+
+
 variable "use_custom_dns_a_registration" {
   description = "Boolean value indicating if a custom dns a record should be created when using private endpoints"
   default     = false
@@ -136,20 +149,13 @@ variable "management_dns_subscription_id" {
 }
 
 variable "management_dns_resourcegroup_name" {
-  description = "String value giving the possibility to register custom dns a records in a separate resourcegroup"
-  default     = null
-  type        = string
-}
+                                               description = "String value giving the possibility to register custom dns a records in a separate resourcegroup"
+                                               default     = null
+                                               type        = string
+                                             }
 
-
-variable "scs_shared_disk_size" {
-  description = "The size of the shared disk for the SAP Central Services Windows cluster"
-}
-
-variable "scs_shared_disk_lun" {
-  description = "The LUN of the shared disk for the SAP Central Services Windows cluster"
-}
-
+variable "scs_cluster_disk_lun"              { description = "The LUN of the shared disk for the SAP Central Services cluster" }
+variable "scs_cluster_disk_size"             { description = "The size of the shared disk for the SAP Central Services cluster" }
 
 #########################################################################################
 #                                                                                       #
@@ -157,10 +163,14 @@ variable "scs_shared_disk_lun" {
 #                                                                                       #
 #########################################################################################
 
-variable "use_scalesets_for_deployment" {
-  description = "Use Flexible Virtual Machine Scale Sets for the deployment"
-}
+variable "use_scalesets_for_deployment"      { description = "Use Flexible Virtual Machine Scale Sets for the deployment" }
 
-variable "scale_set_id" {
-  description = "Azure resource identifier for scale set"
-}
+variable "scale_set_id"                      { description = "Azure resource identifier for scale set" }
+
+#########################################################################################
+#                                                                                       #
+#  Tags                                                                                 #
+#                                                                                       #
+#########################################################################################
+
+variable "tags"                              { description = "If provided, tags for all resources" }

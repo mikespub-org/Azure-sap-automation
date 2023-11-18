@@ -59,7 +59,6 @@ data "azuread_service_principal" "sp" {
   application_id = local.spn.client_id
 }
 
-
 data "azurerm_key_vault_secret" "cp_subscription_id" {
   count        = length(try(data.terraform_remote_state.landscape.outputs.controlplane_environment, "")) > 0 ? 1 : 0
   name         = format("%s-subscription-id", data.terraform_remote_state.landscape.outputs.controlplane_environment)

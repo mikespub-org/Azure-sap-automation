@@ -1,8 +1,9 @@
-#########################################################################################
-#                                                                                       #
-#  Environment definitioms                                                              #
-#                                                                                       #
-#########################################################################################
+
+#######################################4#######################################8
+#                                                                              #
+#  Environment definitioms                                                     #
+#                                                                              #
+#######################################4#######################################8
 
 variable "environment" {
   type        = string
@@ -302,11 +303,27 @@ variable "fencing_role_name" {
   default     = "Virtual Machine Contributor"
 }
 
+variable "use_simple_mount" {
+  description = "If specified use Simple mount"
+  default     = true
+}
+
+
 #########################################################################################
 #                                                                                       #
 #  Database tier variables                                                              #
 #                                                                                       #
 #########################################################################################
+
+variable "database_cluster_disk_lun" {
+  description = "The LUN of the shared disk for the Database cluster"
+  default     = 5
+}
+
+variable "database_cluster_disk_size" {
+  description = "The size of the shared disk for the Database cluster"
+  default     = 128
+}
 
 variable "database_platform" {
   description = "Database platform, supported values are HANA, DB2, ORACLE, ORACLE-ASM, ASE, SQLSERVER or NONE (in this case no database tier is deployed)"
@@ -326,6 +343,11 @@ variable "database_server_count" {
 variable "database_high_availability" {
   description = "If true, the database tier will be configured for high availability"
   default     = false
+}
+
+variable "database_cluster_type" {
+  description   = "Cluster quorum type; AFA (Azure Fencing Agent), ASD (Azure Shared Disk), ISCSI"
+  default       = "AFA"
 }
 
 variable "use_observer" {
@@ -471,6 +493,9 @@ variable "database_use_premium_v2_storage" {
 }
 
 
+
+
+
 #########################################################################################
 #                                                                                       #
 #  Application tier variables                                                           #
@@ -532,6 +557,11 @@ variable "scs_server_count" {
 variable "scs_high_availability" {
   description = "If true, the SAP Central Services tier will be configured for high availability"
   default     = false
+}
+
+variable "scs_cluster_type" {
+  description   = "Cluster quorum type; AFA (Azure Fencing Agent), ASD (Azure Shared Disk), ISCSI"
+  default       = "AFA"
 }
 
 variable "scs_server_zones" {
@@ -624,14 +654,14 @@ variable "scs_server_use_ppg" {
   }
 }
 
-variable "scs_shared_disk_size" {
-  description = "The size of the shared disk for the SAP Central Services Windows cluster"
-  default     = 128
+variable "scs_cluster_disk_lun" {
+  description = "The LUN of the shared disk for the SAP Central Services cluster"
+  default     = 5
 }
 
-variable "scs_shared_disk_lun" {
-  description = "The LUN of the shared disk for the SAP Central Services Windows cluster"
-  default     = 5
+variable "scs_cluster_disk_size" {
+  description = "The size of the shared disk for the SAP Central Services cluster"
+  default     = 128
 }
 
 #########################################################################################
@@ -646,6 +676,11 @@ variable "application_server_count" {
 }
 
 variable "pas_instance_number" {
+  description = "The Instance number for PAS"
+  default     = "00"
+}
+
+variable "app_instance_number" {
   description = "The Instance number for PAS"
   default     = "00"
 }
@@ -855,7 +890,7 @@ variable "use_loadbalancers_for_standalone_deployments" {
 
 variable "idle_timeout_scs_ers" {
   description = "Sets the idle timeout setting for the SCS and ERS loadbalancer"
-  default     = 4
+  default     = 30
 }
 
 variable "bom_name" {
@@ -953,6 +988,11 @@ variable "sapmnt_private_endpoint_id" {
   description = "Azure Resource Identifier for an private endpoint connection"
   type        = string
   default     = ""
+}
+
+variable "Use_AFS_for_Installation" {
+  description = "If true, will use AFS for installation media."
+  default     = false
 }
 
 #########################################################################################
@@ -1177,5 +1217,15 @@ variable "subscription" {
 
 variable "configuration_settings" {
   description = "This is a dictionary that will contain values persisted to the sap-parameters.file"
+  default     = {}
+}
+
+variable "upgrade_packages" {
+  description = "If defined, will upgrade the packages on the virtual machines"
+  default     = false
+}
+
+variable "tags" {
+  description = "If provided, tags for all resources"
   default     = {}
 }

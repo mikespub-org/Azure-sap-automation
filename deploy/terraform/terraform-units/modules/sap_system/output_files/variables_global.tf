@@ -184,6 +184,11 @@ variable "pas_instance_number" {
   default = "00"
 }
 
+variable "app_instance_number" {
+  description = "The Instance number for PAS"
+  default     = "00"
+}
+
 variable "platform" {
   default = "HANA"
 }
@@ -257,6 +262,10 @@ variable "use_msi_for_clusters" {
   description = "If true, the Pacemaker cluser will use a managed identity"
 }
 
+variable "use_simple_mount" {
+  default     = true
+}
+
 variable "dns" {
   description = "The DNS label"
   default     = ""
@@ -311,4 +320,8 @@ variable "web_server_count" {
 variable "db_server_count" {
   description = "Number of Database Servers"
   type    = number
+}
+
+variable "upgrade_packages" {
+  description = "If defined, will upgrade the packages on the virtual machines"
 }

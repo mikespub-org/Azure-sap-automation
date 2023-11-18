@@ -1,11 +1,24 @@
 variable "application_tier" {
   validation {
     condition = (
-      length(trimspace(try(var.application_tier.sid, ""))) != 0
+      length(trimspace(try(var.application_tier.sid, ""))) == 3
     )
-    error_message = "The sid must be specified in the application.sid field."
+    error_message = "The sid must be specified in the sid field."
   }
 
+  validation {
+    condition = (
+      var.application_tier.scs_high_availability ? (
+        var.application_tier.scs_cluster_type != "ASD" ? (
+          true) : (
+          length(try(var.application_tier.scs_zones, [])) <= 1
+        )) : (
+        true
+      )
+    )
+
+    error_message = "Cluster type 'ASD' does not support cross zonal deployments."
+  }
 }
 variable "database" {
   validation {
@@ -280,3 +293,14 @@ variable "landscape_tfstate" {
 variable "use_scalesets_for_deployment" {
   description = "Use Flexible Virtual Machine Scale Sets for the deployment"
 }
+
+#########################################################################################
+#                                                                                       #
+#  Tags                                                                                 #
+#                                                                                       #
+#########################################################################################
+
+variable "tags" {
+  description = "If provided, tags for all resources"
+}
+
