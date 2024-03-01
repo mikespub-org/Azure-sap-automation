@@ -701,6 +701,16 @@
         ],
         "Overrules": "",
         "Display": 2
+      },
+
+      {
+        "Name": "enable_rbac_authorization_for_keyvault",
+        "Required": false,
+        "Description": "Controls the access policy model for the workload zone keyvault",
+        "Type": "checkbox",
+        "Options": [],
+        "Overrules": "",
+        "Display": 2
       }
     ]
   },
@@ -1059,6 +1069,15 @@
         ],
         "Overrules": "",
         "Display": 3
+      },
+      {
+        "Name": "user_assigned_identity_id",
+        "Required": false,
+        "Description": "Azure resource identifier for User assigned identity.",
+        "Type": "lookup",
+        "Options": [],
+        "Overrules": "",
+        "Display": 3
       }
 
     ]
@@ -1080,6 +1099,24 @@
         "Name": "utility_vm_size",
         "Required": false,
         "Description": "Defines the size for the utility virtual machine. Default size is Standard_D4ds_v4.",
+        "Type": "field",
+        "Options": [],
+        "Overrules": "",
+        "Display": 3
+      },
+      {
+        "Name": "utility_vm_os_disk_size",
+        "Required": false,
+        "Description": "Defines the size of the OS disk for the Virtual Machine. Default size is 128",
+        "Type": "field",
+        "Options": [],
+        "Overrules": "",
+        "Display": 3
+      },
+      {
+        "Name": "utility_vm_os_disk_type",
+        "Required": false,
+        "Description": "Defines the type of the OS disk for the Virtual Machine. Default size is Premium_LRS.",
         "Type": "field",
         "Options": [],
         "Overrules": "",

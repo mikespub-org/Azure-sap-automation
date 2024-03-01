@@ -231,6 +231,9 @@ $$spn_keyvault_id$$
 # enable_purge_control_for_keyvaults is an optional parameter that czan be used to disable the purge protection fro Azure keyvaults
 $$enable_purge_control_for_keyvaults$$
 
+# enable_rbac_authorization_for_keyvault Controls the access policy model for the workload zone keyvault.
+$$enable_rbac_authorization_for_keyvault$$
+
 #########################################################################################
 #                                                                                       #
 #  Credentials                                                                          #
@@ -397,7 +400,7 @@ $$ANF_install_volume_size$$
 
 ###########################################################################
 #                                                                         #
-#                                    ISCSI                                #
+#                                    ISCSI Networking                     #
 #                                                                         #
 ###########################################################################
 
@@ -449,6 +452,8 @@ $$iscsi_nic_ips$$
 # Defines the Availability zones for the iSCSI devices
 $$iscsi_vm_zones$$
 
+# user_assigned_identity_id defines the user assigned identity to be assigned to the Virtual machines
+$$user_assigned_identity_id$$
 
 ##########################################################################################
 #                                                                                        #
@@ -478,6 +483,13 @@ $$utility_vm_count$$
 
 # Defines the SKU for the workload virtual machine
 $$utility_vm_size$$
+
+# Defines the size of the OS disk for the Virtual Machine
+$$utility_vm_os_disk_size$$
+
+# Defines the type of the OS disk for the Virtual Machine
+$$utility_vm_os_disk_type$$
+
 
 # Defines if the utility virtual machine uses DHCP
 $$utility_vm_useDHCP$$

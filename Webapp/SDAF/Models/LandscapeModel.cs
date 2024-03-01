@@ -263,6 +263,8 @@ namespace AutomationForm.Models
     [GuidValidator]
     public string[] additional_users_to_add_to_keyvault_policies { get; set; }
 
+    public bool? enable_rbac_authorization_for_keyvault { get; set; } = false;
+
 
     public string NFS_provider { get; set; }
 
@@ -300,6 +302,11 @@ namespace AutomationForm.Models
 
     public string utility_vm_size { get; set; }
 
+    public string utility_vm_os_disk_size { get; set; } = "128";
+
+    public string utility_vm_os_disk_type { get; set; } = "Premium_LRS";
+    
+
     public bool? utility_vm_useDHCP { get; set; } = true;
 
     public Image utility_vm_image { get; set; }
@@ -331,5 +338,8 @@ namespace AutomationForm.Models
     public string[] iscsi_vm_zones { get; set; }
 
     public string[] iscsi_nic_ips { get; set; }
+
+    [UserAssignedIdentityIdValidator(ErrorMessage = "Invalid User Assigned id")]
+    public string user_assigned_identity_id { get; set; }
   }
 }

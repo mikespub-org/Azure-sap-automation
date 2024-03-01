@@ -124,15 +124,16 @@ resource "azurerm_linux_virtual_machine" "app" {
   resource_group_name                  = var.resource_group[0].name
 
   proximity_placement_group_id         = var.application_tier.app_use_ppg ? (
-                                           local.app_zonal_deployment ? var.ppg[count.index % max(local.app_zone_count, 1)] : var.ppg[0]) : (
+
+                                           var.ppg[count.index % max(length(var.ppg), 1)]) : (
                                            null
                                          )
 
   //If more than one servers are deployed into a single zone put them in an availability set and not a zone
   availability_set_id                  = local.use_app_avset ? (
                                            length(var.application_tier.avset_arm_ids) > 0 ? (
-                                             var.application_tier.avset_arm_ids[count.index % max(local.app_zone_count, 1)]) : (
-                                             azurerm_availability_set.app[count.index % max(local.app_zone_count, 1)].id
+                                             var.application_tier.avset_arm_ids[count.index % max(length(var.ppg), 1)]) : (
+                                             azurerm_availability_set.app[count.index % max(length(var.ppg), 1)].id
                                            )) : (
                                            null
                                          )
@@ -218,17 +219,23 @@ resource "azurerm_linux_virtual_machine" "app" {
   dynamic "plan" {
                    for_each = range(var.application_tier.app_os.type == "marketplace_with_plan" ? 1 : 0)
                    content {
-                     name      = var.application_tier.app_os.sku
-                     publisher = var.application_tier.app_os.publisher
-                     product   = var.application_tier.app_os.offer
-                   }
+                             name      = var.application_tier.app_os.sku
+                             publisher = var.application_tier.app_os.publisher
+                             product   = var.application_tier.app_os.offer
+                           }
                  }
 
   boot_diagnostics {
                      storage_account_uri = var.storage_bootdiag_endpoint
                    }
 
-
+  dynamic "identity"   {
+                         for_each = range(length(var.application_tier.user_assigned_identity_id) > 0 ? 1 : 0)
+                         content {
+                                   type         = "UserAssigned"
+                                   identity_ids = [var.application_tier.user_assigned_identity_id]
+                                 }
+                       }
 }
 
 # Create the Windows Application VM(s)
@@ -342,6 +349,13 @@ resource "azurerm_windows_virtual_machine" "app" {
   boot_diagnostics {
                       storage_account_uri = var.storage_bootdiag_endpoint
                     }
+  dynamic "identity"   {
+                         for_each = range(length(var.application_tier.user_assigned_identity_id) > 0 ? 1 : 0)
+                         content {
+                                   type         = "UserAssigned"
+                                   identity_ids = [var.application_tier.user_assigned_identity_id]
+                                 }
+                       }
 
 }
 
@@ -403,7 +417,7 @@ resource "azurerm_virtual_machine_extension" "app_lnx_aem_extension" {
                                              "system": "SAP"
                                            }
                                          )
-
+  tags                                 = var.tags
 }
 
 
@@ -423,6 +437,7 @@ resource "azurerm_virtual_machine_extension" "app_win_aem_extension" {
                                              "system": "SAP"
                                            }
                                          )
+  tags                                 = var.tags
 }
 
 resource "azurerm_virtual_machine_extension" "configure_ansible_app" {
@@ -445,4 +460,5 @@ resource "azurerm_virtual_machine_extension" "configure_ansible_app" {
                                               "commandToExecute": "powershell.exe -ExecutionPolicy Unrestricted -File configure_ansible.ps1 -Verbose"
                                            }
                                          )
+  tags                                 = var.tags
 }
